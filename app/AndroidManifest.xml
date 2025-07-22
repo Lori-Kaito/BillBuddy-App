@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Camera permission for capturing receipts -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- Storage permissions for saving receipt images -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+
+    <!-- Camera feature -->
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.camera.autofocus"
+        android:required="false" />
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.BillBuddy">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ui.expense.AddPersonalExpenseActivity"
+            android:label="Add Personal Expense"
+            android:parentActivityName=".MainActivity" />
+
+        <activity
+            android:name=".ui.expense.PersonalHistoryActivity"
+            android:label="Personal History"
+            android:parentActivityName=".MainActivity" />
+
+        <activity
+            android:name=".ui.group.GroupsActivity"
+            android:label="Expense Groups"
+            android:parentActivityName=".MainActivity" />
+
+        <activity
+            android:name=".ui.group.GroupDetailActivity"
+            android:label="Group Details"
+            android:parentActivityName=".ui.group.GroupsActivity" />
+
+        <activity
+            android:name=".ui.group.AddGroupExpenseActivity"
+            android:label="Add Group Expense"
+            android:parentActivityName=".MainActivity" />
+
+        <activity
+            android:name=".ui.summary.SpendingSummaryActivity"
+            android:label="Spending Summary"
+            android:parentActivityName=".MainActivity" />
+
+        <activity
+            android:name=".ui.category.CategoriesActivity"
+            android:label="Categories"
+            android:parentActivityName=".MainActivity" />
+
+        <!-- FileProvider for camera images -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.example.billbuddy.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <!-- ML Kit metadata -->
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="ocr" />
+    </application>
+
+</manifest>

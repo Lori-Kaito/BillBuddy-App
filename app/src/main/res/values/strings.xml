@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name">BillBuddy</string>
+    <string name="add_personal_expense">Add Personal Expense</string>
+    <string name="personal_history">Personal History</string>
+    <string name="manage_groups">Manage Groups</string>
+    <string name="spending_summary">Spending Summary</string>
+    <string name="categories">Categories</string>
+    <string name="camera_permission_required">Camera permission is required to capture receipts</string>
+    <string name="receipt_photo">Receipt Photo</string>
+    <string name="tap_to_capture">Tap to capture receipt</string>
+    <string name="capture_receipt">Capture Receipt</string>
+    <string name="scan_text">Scan Text</string>
+    <string name="expense_title">Expense Title</string>
+    <string name="amount">Amount</string>
+    <string name="category">Category</string>
+    <string name="date">Date</string>
+    <string name="notes_optional">Notes (Optional)</string>
+    <string name="save_expense">Save Expense</string>
+    <string name="currency_peso">₱</string>
+</resources>
