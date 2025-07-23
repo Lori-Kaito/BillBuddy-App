@@ -219,6 +219,9 @@ class SpendingSummaryViewModel(application: Application) : AndroidViewModel(appl
         loadSummary(Period.WEEK, currentYear)
     }
 
+
+
+    @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
     private fun loadAvailableYears() {
         viewModelScope.launch {
             val years = expenseDao.getAvailableYears().filterNotNull()
@@ -227,8 +230,9 @@ class SpendingSummaryViewModel(application: Application) : AndroidViewModel(appl
             // If current year is not in available years select the most recent year
             val currentYear = _selectedYear.value
             if (years.isNotEmpty() && !years.contains(currentYear)) {
-                _selectedYear.postValue(years.first())
-                loadSummary(_selectedPeriod.value ?: Period.WEEK, years.first())
+                val firstYear = years.first().toString()
+                _selectedYear.postValue(firstYear)
+                loadSummary(_selectedPeriod.value ?: Period.WEEK, firstYear)
             }
         }
     }
