@@ -412,10 +412,19 @@ class GroupExpenseAdapter : RecyclerView.Adapter<GroupExpenseAdapter.ExpenseView
             val dateFormat = SimpleDateFormat("MMM dd", Locale.US)
             binding.tvExpenseDate.text = dateFormat.format(expense.date)
 
+            // Show receipt indicator
             if (!expense.receiptImagePath.isNullOrBlank()) {
                 binding.ivHasReceipt.visibility = View.VISIBLE
             } else {
                 binding.ivHasReceipt.visibility = View.GONE
+            }
+
+            // NEW: Show notes if they exist
+            if (!expense.notes.isNullOrBlank()) {
+                binding.tvExpenseNotes.text = "📝 ${expense.notes}"
+                binding.tvExpenseNotes.visibility = View.VISIBLE
+            } else {
+                binding.tvExpenseNotes.visibility = View.GONE
             }
         }
     }
