@@ -25,14 +25,14 @@
     <color name="amount_text_color">#1565C0</color>
 
     <!-- Category Colors -->
-    <color name="category_food">#FF6B6B</color>
-    <color name="category_groceries">#4ECDC4</color>
-    <color name="category_transport">#45B7D1</color>
-    <color name="category_utilities">#96CEB4</color>
-    <color name="category_entertainment">#DDA0DD</color>
-    <color name="category_healthcare">#FFB6C1</color>
-    <color name="category_shopping">#F4A460</color>
-    <color name="category_others">#D3D3D3</color>
+    <color name="category_food">#FF6B6B</color>          <!-- Red/Pink for Food -->
+    <color name="category_groceries">#4ECDC4</color>     <!-- Teal for Groceries -->
+    <color name="category_transport">#45B7D1</color>     <!-- Blue for Transportation -->
+    <color name="category_entertainment">#9B59B6</color> <!-- Purple for Entertainment -->
+    <color name="category_healthcare">#E74C3C</color>    <!-- Red for Healthcare -->
+    <color name="category_shopping">#F39C12</color>      <!-- Orange for Shopping -->
+    <color name="category_utilities">#7F8C8D</color>     <!-- Gray for Utilities -->
+    <color name="category_others">#95A5A6</color>        <!-- Light Gray for Others -->
 
     <color name="colorError">#B00020</color>
     <color name="colorSuccess">#4CAF50</color>
