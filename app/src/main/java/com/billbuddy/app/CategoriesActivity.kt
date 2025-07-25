@@ -397,7 +397,7 @@ class CategoriesAdapter(
     }
 }
 
-// Category Expenses Adapter (unchanged)
+// Category Expenses Adapter
 class CategoryExpensesAdapter(
     private val onExpenseClick: (ExpenseWithDetails) -> Unit = {}
 ) : RecyclerView.Adapter<CategoryExpensesAdapter.ExpenseViewHolder>() {

@@ -419,7 +419,7 @@ class GroupExpenseAdapter : RecyclerView.Adapter<GroupExpenseAdapter.ExpenseView
                 binding.ivHasReceipt.visibility = View.GONE
             }
 
-            // NEW: Show notes if they exist
+            // Show notes if they exist
             if (!expense.notes.isNullOrBlank()) {
                 binding.tvExpenseNotes.text = "📝 ${expense.notes}"
                 binding.tvExpenseNotes.visibility = View.VISIBLE
