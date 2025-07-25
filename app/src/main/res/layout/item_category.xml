@@ -18,12 +18,14 @@
         android:padding="16dp"
         android:gravity="center_vertical">
 
-        <View
-            android:id="@+id/vCategoryColor"
+        <ImageView
+            android:id="@+id/ivCategoryIcon"
             android:layout_width="32dp"
             android:layout_height="32dp"
-            android:background="@drawable/circle_background"
-            android:layout_marginEnd="12dp" />
+            android:src="@drawable/ic_category"
+            android:layout_marginEnd="12dp"
+            app:tint="@color/colorPrimary"
+            tools:src="@drawable/ic_restaurant" />
 
         <LinearLayout
             android:layout_width="0dp"

@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -76,7 +77,7 @@ class CategoriesActivity : AppCompatActivity() {
     }
 
     private fun observeData() {
-        // SAFE: Check if categoriesWithStats exists, fallback to regular categories
+        // Check if categoriesWithStats exists, fallback to regular categories
         try {
             viewModel.categoriesWithStats.observe(this) { categoriesWithStats ->
                 if (categoriesWithStats != null) {
@@ -84,7 +85,7 @@ class CategoriesActivity : AppCompatActivity() {
                 }
             }
         } catch (e: Exception) {
-            // Fallback: If categoriesWithStats doesn't exist, create it from regular categories
+            // If categoriesWithStats doesn't exist, create it from regular categories
             viewModel.categories.observe(this) { categories ->
                 val categoriesWithStats = categories.map { category ->
                     CategoryWithStats(
@@ -116,37 +117,62 @@ class CategoriesActivity : AppCompatActivity() {
     }
 
     private fun showCategoriesList() {
-        isShowingExpenses = false
-        binding.rvCategories.adapter = categoriesAdapter
-        supportActionBar?.title = "Categories"
-        binding.tvEmptyExpenses.visibility = View.GONE
+        binding.rvCategories.animate()
+            .translationX(binding.rvCategories.width.toFloat())
+            .alpha(0f)
+            .setDuration(150)
+            .withEndAction {
+                isShowingExpenses = false
+                binding.rvCategories.adapter = categoriesAdapter
+                supportActionBar?.title = "Categories"
+                binding.tvEmptyExpenses.visibility = View.GONE
 
-        // SAFE: Load categories with stats, with error handling
-        try {
-            viewModel.loadCategoriesWithStats()
-        } catch (e: Exception) {
-            // If loadCategoriesWithStats doesn't exist, the regular categories observer will handle it
-            e.printStackTrace()
-        }
+                try {
+                    viewModel.loadCategoriesWithStats()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+
+                binding.rvCategories.translationX = -binding.rvCategories.width.toFloat()
+                binding.rvCategories.animate()
+                    .translationX(0f)
+                    .alpha(1f)
+                    .setDuration(150)
+                    .start()
+            }
+            .start()
     }
+
 
     private fun showCategoryExpenses(category: CategoryWithStats) {
         try {
-            isShowingExpenses = true
-            currentCategoryName = category.name
-            binding.rvCategories.adapter = expensesAdapter
-            supportActionBar?.title = category.name
+            binding.rvCategories.animate()
+                .translationX(-binding.rvCategories.width.toFloat())
+                .alpha(0f)
+                .setDuration(150)
+                .withEndAction {
+                    // Switch content
+                    isShowingExpenses = true
+                    currentCategoryName = category.name
+                    binding.rvCategories.adapter = expensesAdapter
+                    supportActionBar?.title = category.name
+                    viewModel.loadExpensesForCategory(category.id)
 
-            // Load expenses for this category
-            viewModel.loadExpensesForCategory(category.id)
+
+                    binding.rvCategories.translationX = binding.rvCategories.width.toFloat()
+                    binding.rvCategories.animate()
+                        .translationX(0f)
+                        .alpha(1f)
+                        .setDuration(150)
+                        .start()
+                }
+                .start()
         } catch (e: Exception) {
             e.printStackTrace()
-            // Fallback: go back to categories list
-            showCategoriesList()
         }
     }
 
-    // SAFE: Open receipt viewer for selected expense
+    // Open receipt viewer for selected expense
     private fun openReceiptViewer(expense: ExpenseWithDetails) {
         try {
             // Validate expense data before creating intent
@@ -168,17 +194,17 @@ class CategoriesActivity : AppCompatActivity() {
             if (intent.resolveActivity(packageManager) != null) {
                 startActivity(intent)
             } else {
-                // Fallback: Show expense details in a simple dialog
+                // Show expense details in a simple dialog
                 showExpenseDetailsDialog(expense)
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            // Fallback: Show expense details in a simple dialog
+            // Show expense details in a simple dialog
             showExpenseDetailsDialog(expense)
         }
     }
 
-    // FALLBACK: Simple expense details dialog if ReceiptViewerActivity fails
+    // Expense details dialog if ReceiptViewerActivity fails
     private fun showExpenseDetailsDialog(expense: ExpenseWithDetails) {
         try {
             val format = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("en-PH"))
@@ -227,7 +253,7 @@ class CategoriesActivity : AppCompatActivity() {
     }
 }
 
-// SAFE Categories Adapter with error handling
+// Categories Adapter with colored icons
 class CategoriesAdapter(
     private val onCategoryClick: (CategoryWithStats) -> Unit
 ) : RecyclerView.Adapter<CategoriesAdapter.CategoryViewHolder>() {
@@ -265,7 +291,10 @@ class CategoriesAdapter(
                 val position = bindingAdapterPosition
                 if (position != RecyclerView.NO_POSITION && position < categories.size) {
                     try {
-                        onCategoryClick(categories[position])
+                        // Add click animation
+                        animateClick {
+                            onCategoryClick(categories[position])
+                        }
                     } catch (e: Exception) {
                         e.printStackTrace()
                     }
@@ -273,11 +302,43 @@ class CategoriesAdapter(
             }
         }
 
+        private fun animateClick(onAnimationEnd: () -> Unit) {
+            // Icon bounce animation
+            binding.ivCategoryIcon.animate()
+                .scaleX(1.2f)
+                .scaleY(1.2f)
+                .setDuration(150)
+                .withEndAction {
+                    binding.ivCategoryIcon.animate()
+                        .scaleX(1.0f)
+                        .scaleY(1.0f)
+                        .setDuration(150)
+                        .start()
+                }
+                .start()
+
+            // Card scale animation
+            binding.root.animate()
+                .scaleX(0.98f)
+                .scaleY(0.98f)
+                .setDuration(150)
+                .withEndAction {
+                    binding.root.animate()
+                        .scaleX(1.0f)
+                        .scaleY(1.0f)
+                        .setDuration(150)
+                        .withEndAction {
+                            onAnimationEnd()
+                        }
+                        .start()
+                }
+                .start()
+        }
+
         fun bind(category: CategoryWithStats) {
             try {
                 binding.tvCategoryName.text = category.name ?: "Unknown Category"
 
-                // Show expense count and total amount
                 val format = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("en-PH"))
                 if (category.expenseCount > 0) {
                     binding.tvCategoryStats.text = "${category.expenseCount} expenses • ${format.format(category.totalAmount)}"
@@ -287,32 +348,56 @@ class CategoriesAdapter(
                     binding.tvCategoryStats.visibility = View.VISIBLE
                 }
 
-                // Set category color if available
-                if (category.color != null) {
-                    try {
-                        val color = android.graphics.Color.parseColor(category.color)
-                        binding.vCategoryColor.setBackgroundColor(color)
-                    } catch (e: Exception) {
-                        // Use default color if parsing fails
-                        binding.vCategoryColor.setBackgroundColor(
-                            androidx.core.content.ContextCompat.getColor(
-                                binding.root.context,
-                                android.R.color.darker_gray
-                            )
-                        )
-                    }
-                }
+                // Set icon and color for category
+                val iconRes = getCategoryIconResource(category.name ?: "")
+                val iconColor = getCategoryColor(category.name ?: "")
+
+                binding.ivCategoryIcon.setImageResource(iconRes)
+                binding.ivCategoryIcon.setColorFilter(iconColor, android.graphics.PorterDuff.Mode.SRC_IN)
+
             } catch (e: Exception) {
                 e.printStackTrace()
-                // Fallback display
                 binding.tvCategoryName.text = "Error loading category"
                 binding.tvCategoryStats.text = ""
+                binding.ivCategoryIcon.setImageResource(R.drawable.ic_category)
+            }
+        }
+
+        private fun getCategoryIconResource(categoryName: String): Int {
+            return when (categoryName.lowercase().trim()) {
+                "food & dining", "food", "dining" -> R.drawable.ic_restaurant
+                "groceries", "grocery" -> R.drawable.ic_shopping_cart
+                "transportation", "transport" -> R.drawable.ic_directions_car
+                "entertainment" -> R.drawable.ic_movie
+                "healthcare", "health" -> R.drawable.ic_local_hospital
+                "shopping" -> R.drawable.ic_shopping_bag
+                "utilities", "utility" -> R.drawable.ic_home
+                "others", "other" -> R.drawable.ic_category
+                else -> {
+                    println("DEBUG: Unknown category: '$categoryName'")
+                    R.drawable.ic_category
+                }
+            }
+        }
+
+        private fun getCategoryColor(categoryName: String): Int {
+            val context = binding.root.context
+            return when (categoryName.lowercase().trim()) {
+                "food & dining", "food", "dining" -> ContextCompat.getColor(context, android.R.color.holo_red_dark)
+                "groceries", "grocery" -> ContextCompat.getColor(context, android.R.color.holo_green_dark)
+                "transportation", "transport" -> ContextCompat.getColor(context, android.R.color.holo_blue_dark)
+                "entertainment" -> ContextCompat.getColor(context, android.R.color.holo_purple)
+                "healthcare", "health" -> ContextCompat.getColor(context, android.R.color.holo_red_light)
+                "shopping" -> ContextCompat.getColor(context, android.R.color.holo_orange_dark)
+                "utilities", "utility" -> ContextCompat.getColor(context, android.R.color.darker_gray)
+                "others", "other" -> ContextCompat.getColor(context, android.R.color.black)
+                else -> ContextCompat.getColor(context, android.R.color.black)
             }
         }
     }
 }
 
-// SAFE Category Expenses Adapter with error handling
+// Category Expenses Adapter (unchanged)
 class CategoryExpensesAdapter(
     private val onExpenseClick: (ExpenseWithDetails) -> Unit = {}
 ) : RecyclerView.Adapter<CategoryExpensesAdapter.ExpenseViewHolder>() {
@@ -365,12 +450,10 @@ class CategoryExpensesAdapter(
                 val format = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("en-PH"))
                 binding.tvExpenseAmount.text = format.format(expense.amount)
 
-                // Show date instead of category (since we're already in a category)
                 val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.US)
                 binding.tvExpenseCategory.text = dateFormat.format(expense.date)
-                binding.tvExpenseDate.visibility = View.GONE // Hide the duplicate date field
+                binding.tvExpenseDate.visibility = View.GONE
 
-                // Show receipt indicator if available
                 if (!expense.receiptImagePath.isNullOrBlank()) {
                     binding.ivReceiptIcon.visibility = View.VISIBLE
                 } else {
@@ -378,7 +461,6 @@ class CategoryExpensesAdapter(
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-                // Fallback display
                 binding.tvExpenseTitle.text = "Error loading expense"
                 binding.tvExpenseAmount.text = "₱0.00"
                 binding.tvExpenseCategory.text = ""
