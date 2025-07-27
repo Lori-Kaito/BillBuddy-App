@@ -465,14 +465,19 @@ class GroupDetailActivity : AppCompatActivity() {
     private fun showRemoveMemberConfirmation(member: GroupMember) {
         MaterialAlertDialogBuilder(this)
             .setTitle("Remove Member")
-            .setMessage("Are you sure you want to remove ${member.name} from this group?\n\nThis action cannot be undone.")
+            .setMessage("Are you sure you want to remove ${member.name} from this group?\n\nThis will recalculate everyone's share in existing expenses.\n\nThis action cannot be undone.")
             .setIcon(android.R.drawable.ic_dialog_alert)
-            .setPositiveButton("Remove") { _, _ ->
-                viewModel.removeMember(member)
-                Toast.makeText(this, "${member.name} has been removed from the group", Toast.LENGTH_SHORT).show()
+            .setPositiveButton("Remove & Recalculate") { _, _ ->
+                removeMemberAndRecalculate(member)
             }
             .setNegativeButton("Cancel", null)
             .show()
+    }
+
+    // Remove member and recalculate expenses
+    private fun removeMemberAndRecalculate(member: GroupMember) {
+        viewModel.removeMemberAndRecalculateExpenses(member)
+        Toast.makeText(this, "${member.name} removed. All expenses recalculated.", Toast.LENGTH_LONG).show()
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {

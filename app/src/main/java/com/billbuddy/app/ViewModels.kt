@@ -202,6 +202,83 @@ class GroupDetailViewModel(
         }
     }
 
+    fun removeMemberAndRecalculateExpenses(memberToRemove: GroupMember) {
+        viewModelScope.launch {
+            try {
+                // Get all current group expenses before removing member
+                val groupExpenses = expenseDao.getGroupExpensesSync(groupId)
+
+                // Delete all expense splits for this member first
+                deleteAllMemberSplits(memberToRemove.id)
+
+                // Remove the member
+                groupMemberDao.delete(memberToRemove)
+
+                // Get remaining members count
+                val remainingMembers = groupMemberDao.getGroupMembersSync(groupId)
+                val newMemberCount = remainingMembers.size
+
+                println("DEBUG: Removed member ${memberToRemove.name}")
+                println("DEBUG: Remaining members: ${newMemberCount}")
+
+                // Only recalculate if there are still members left
+                if (newMemberCount > 0) {
+                    // Recalculate each expense for remaining members
+                    groupExpenses.forEach { expense ->
+                        println("DEBUG: Recalculating expense: ${expense.title} - ₱${expense.amount}")
+                        recalculateExpenseAfterRemoval(expense, newMemberCount)
+                    }
+                } else {
+                    println("DEBUG: No members left in group")
+                }
+
+                println("DEBUG: Recalculation after removal completed")
+
+            } catch (e: Exception) {
+                println("ERROR: Failed to remove member and recalculate: ${e.message}")
+                e.printStackTrace()
+            }
+        }
+    }
+
+    private suspend fun deleteAllMemberSplits(memberId: Long) {
+        // Get all splits for this member across all expenses
+        val memberSplits = expenseSplitDao.getAllSplitsForMember(memberId)
+
+        // Delete each split
+        memberSplits.forEach { split ->
+            expenseSplitDao.delete(split)
+        }
+
+        println("DEBUG: Deleted ${memberSplits.size} expense splits for member")
+    }
+
+    private suspend fun recalculateExpenseAfterRemoval(expense: Expense, newMemberCount: Int) {
+        try {
+            // Get remaining splits for this expense
+            val remainingSplits = expenseSplitDao.getExpenseSplitsSync(expense.id)
+
+            // Calculate new split amount for remaining members
+            val newSplitAmount = expense.amount / newMemberCount
+
+            println("DEBUG: Expense ${expense.title}: ₱${expense.amount} ÷ ${newMemberCount} = ₱${newSplitAmount} per person")
+
+            // Update all remaining splits with new amount
+            remainingSplits.forEach { split ->
+                val updatedSplit = split.copy(
+                    amount = newSplitAmount
+                    // Keep the same isPaid status
+                )
+                expenseSplitDao.update(updatedSplit)
+                println("DEBUG: Updated split for member ${split.memberId}: ₱${newSplitAmount}")
+            }
+
+        } catch (e: Exception) {
+            println("ERROR: Failed to recalculate splits after removal for expense ${expense.title}: ${e.message}")
+            e.printStackTrace()
+        }
+    }
+
     private suspend fun recalculateExpenseSplits(expense: Expense, newMemberCount: Int, newMemberId: Long) {
         try {
             // Get existing splits for this expense

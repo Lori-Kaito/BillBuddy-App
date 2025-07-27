@@ -279,6 +279,12 @@ interface ExpenseSplitDao {
     // Method for marking member splits as paid
     @Query("UPDATE expense_splits SET isPaid = :isPaid, paidAt = :paidAt WHERE memberId = :memberId")
     suspend fun markAllMemberSplitsAsPaid(memberId: Long, isPaid: Boolean, paidAt: Date?)
+
+    @Query("SELECT * FROM expense_splits WHERE memberId = :memberId")
+    suspend fun getAllSplitsForMember(memberId: Long): List<ExpenseSplit>
+
+    @Delete
+    suspend fun delete(split: ExpenseSplit)
 }
 
 data class SplitWithMemberName(
