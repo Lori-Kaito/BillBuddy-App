@@ -88,13 +88,13 @@ class GroupDetailActivity : AppCompatActivity() {
         binding.rvExpenses.layoutManager = LinearLayoutManager(this)
         binding.rvExpenses.adapter = expenseAdapter
 
-        // NEW: Add member button click listener
+        // Add member button click listener
         binding.btnAddMember.setOnClickListener {
             showAddMemberDialog()
         }
     }
 
-    // NEW: Show dialog to add member
+    // Show dialog to add member
     private fun showAddMemberDialog() {
         val currentMemberCount = viewModel.groupMembers.value?.size ?: 0
 
@@ -143,9 +143,9 @@ class GroupDetailActivity : AppCompatActivity() {
         input.requestFocus()
     }
 
-    // NEW: Add member and recalculate all expenses
+    // Add member and recalculate all expenses
     private fun addMemberAndRecalculate(memberName: String) {
-        // VALIDATION: Check current member count
+        // Check current member count
         val currentMemberCount = viewModel.groupMembers.value?.size ?: 0
 
         if (currentMemberCount >= 50) {
@@ -157,7 +157,7 @@ class GroupDetailActivity : AppCompatActivity() {
             return
         }
 
-        // VALIDATION: Check for duplicate names
+        // Check for duplicate names
         val existingNames = viewModel.groupMembers.value?.map { it.name.lowercase().trim() } ?: emptyList()
         if (existingNames.contains(memberName.lowercase().trim())) {
             MaterialAlertDialogBuilder(this)
@@ -173,7 +173,7 @@ class GroupDetailActivity : AppCompatActivity() {
             name = memberName
         )
 
-        // Debug: Check current state
+        // Check current state
         println("DEBUG: Adding member to group with ${currentMemberCount} existing members")
 
         viewModel.addMemberAndRecalculateExpenses(newMember)
@@ -380,7 +380,7 @@ class GroupDetailActivity : AppCompatActivity() {
         }
     }
 
-    // Updates the progress bar:
+    // Updates the progress bar
     private fun updateProgressBar() {
         val members = memberAdapter.getMembers()
         val balances = memberAdapter.getBalances()

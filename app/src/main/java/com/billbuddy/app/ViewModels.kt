@@ -175,19 +175,19 @@ class GroupDetailViewModel(
     fun addMemberAndRecalculateExpenses(newMember: GroupMember) {
         viewModelScope.launch {
             try {
-                // 1. Add the new member first
+                // Add the new member first
                 val newMemberId = groupMemberDao.insert(newMember)
 
-                // 2. Get all current group expenses (synchronously)
+                // Get all current group expenses (synchronously)
                 val groupExpenses = expenseDao.getGroupExpensesSync(groupId)
 
-                // 3. Get all current members including the new one (synchronously)
+                // Get all current members including the new one (synchronously)
                 val allMembers = groupMemberDao.getGroupMembersSync(groupId)
                 val memberCount = allMembers.size
 
                 println("DEBUG: Found ${groupExpenses.size} expenses to recalculate for ${memberCount} members")
 
-                // 4. Recalculate each expense
+                // Recalculate each expense
                 groupExpenses.forEach { expense ->
                     println("DEBUG: Recalculating expense: ${expense.title} - ₱${expense.amount}")
                     recalculateExpenseSplits(expense, memberCount, newMemberId)
@@ -204,7 +204,7 @@ class GroupDetailViewModel(
 
     private suspend fun recalculateExpenseSplits(expense: Expense, newMemberCount: Int, newMemberId: Long) {
         try {
-            // Get existing splits for this expense (synchronously)
+            // Get existing splits for this expense
             val existingSplits = expenseSplitDao.getExpenseSplitsSync(expense.id)
 
             // Calculate new split amount
