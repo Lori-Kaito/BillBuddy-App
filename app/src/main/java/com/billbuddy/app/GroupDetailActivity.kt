@@ -501,23 +501,32 @@ class GroupMemberAdapter(
                     binding.tvMemberBalance.setTextColor(
                         binding.root.context.getColor(android.R.color.holo_red_dark)
                     )
-                    // Show checkbox when member owes money
                     binding.cbSettled.visibility = View.VISIBLE
+
+                    // Clear listener before setting state
+                    binding.cbSettled.setOnCheckedChangeListener(null)
                     binding.cbSettled.isChecked = false
+
+                    // Set listener after setting state
+                    binding.cbSettled.setOnCheckedChangeListener { _, isChecked ->
+                        onPaymentStatusChanged(member.id, isChecked)
+                    }
+
                 } else {
                     binding.tvMemberBalance.text = "Settled"
                     binding.tvMemberBalance.setTextColor(
                         binding.root.context.getColor(android.R.color.holo_green_dark)
                     )
-                    // Show checkbox as checked when settled
                     binding.cbSettled.visibility = View.VISIBLE
-                    binding.cbSettled.isChecked = true
-                }
 
-                // Handle checkbox changes
-                binding.cbSettled.setOnCheckedChangeListener(null) // Clear previous listener
-                binding.cbSettled.setOnCheckedChangeListener { _, isChecked ->
-                    onPaymentStatusChanged(member.id, isChecked)
+                    // Clear listener before setting state
+                    binding.cbSettled.setOnCheckedChangeListener(null)
+                    binding.cbSettled.isChecked = true
+
+                    // Set listener after setting state
+                    binding.cbSettled.setOnCheckedChangeListener { _, isChecked ->
+                        onPaymentStatusChanged(member.id, isChecked)
+                    }
                 }
             } else {
                 binding.tvMemberBalance.text = "No expenses"
@@ -525,6 +534,9 @@ class GroupMemberAdapter(
                     binding.root.context.getColor(android.R.color.darker_gray)
                 )
                 binding.cbSettled.visibility = View.GONE
+
+                // Always clear listener for items without balance
+                binding.cbSettled.setOnCheckedChangeListener(null)
             }
         }
     }
