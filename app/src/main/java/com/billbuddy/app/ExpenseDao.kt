@@ -231,6 +231,9 @@ interface GroupMemberDao {
 
     @Query("DELETE FROM group_members WHERE groupId = :groupId")
     suspend fun deleteAllGroupMembers(groupId: Long)
+
+    @Query("SELECT * FROM group_members WHERE groupId = :groupId")
+    suspend fun getGroupMembersSync(groupId: Long): List<GroupMember>
 }
 
 @Dao
@@ -247,6 +250,9 @@ interface ExpenseSplitDao {
 
     @Query("UPDATE expense_splits SET isPaid = :isPaid, paidAt = :paidAt WHERE id = :splitId")
     suspend fun updatePaymentStatus(splitId: Long, isPaid: Boolean, paidAt: Date?)
+
+    @Query("SELECT * FROM expense_splits WHERE expenseId = :expenseId")
+    suspend fun getExpenseSplitsSync(expenseId: Long): List<ExpenseSplit>
 
     @Query("SELECT * FROM expense_splits WHERE expenseId = :expenseId")
     fun getExpenseSplits(expenseId: Long): LiveData<List<ExpenseSplit>>

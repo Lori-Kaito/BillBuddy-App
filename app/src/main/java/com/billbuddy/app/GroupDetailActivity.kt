@@ -87,17 +87,116 @@ class GroupDetailActivity : AppCompatActivity() {
 
         binding.rvExpenses.layoutManager = LinearLayoutManager(this)
         binding.rvExpenses.adapter = expenseAdapter
+
+        // NEW: Add member button click listener
+        binding.btnAddMember.setOnClickListener {
+            showAddMemberDialog()
+        }
+    }
+
+    // NEW: Show dialog to add member
+    private fun showAddMemberDialog() {
+        val currentMemberCount = viewModel.groupMembers.value?.size ?: 0
+
+        // Check if already at maximum
+        if (currentMemberCount >= 50) {
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Maximum Members Reached")
+                .setMessage("This group already has the maximum of 50 members.")
+                .setPositiveButton("OK", null)
+                .show()
+            return
+        }
+
+        val input = TextInputEditText(this)
+        input.hint = "Member name"
+
+        val textInputLayout = com.google.android.material.textfield.TextInputLayout(this)
+        textInputLayout.hint = "Enter member name"
+        textInputLayout.addView(input)
+
+        val paddingInDp = 24
+        val paddingInPx = (paddingInDp * resources.displayMetrics.density).toInt()
+        textInputLayout.setPadding(paddingInPx, paddingInPx / 2, paddingInPx, 0)
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Add New Member (${currentMemberCount}/50)")
+            .setMessage("This will recalculate everyone's share in existing expenses.")
+            .setView(textInputLayout)
+            .setPositiveButton("Add & Recalculate") { _, _ ->
+                val memberName = input.text.toString().trim()
+                when {
+                    memberName.isEmpty() -> {
+                        Toast.makeText(this, "Please enter a member name", Toast.LENGTH_SHORT).show()
+                    }
+                    memberName.length > 30 -> {
+                        Toast.makeText(this, "Member name is too long (max 30 characters)", Toast.LENGTH_SHORT).show()
+                    }
+                    else -> {
+                        addMemberAndRecalculate(memberName)
+                    }
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+
+        input.requestFocus()
+    }
+
+    // NEW: Add member and recalculate all expenses
+    private fun addMemberAndRecalculate(memberName: String) {
+        // VALIDATION: Check current member count
+        val currentMemberCount = viewModel.groupMembers.value?.size ?: 0
+
+        if (currentMemberCount >= 50) {
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Maximum Members Reached")
+                .setMessage("This group already has the maximum of 50 members. You cannot add more members.")
+                .setPositiveButton("OK", null)
+                .show()
+            return
+        }
+
+        // VALIDATION: Check for duplicate names
+        val existingNames = viewModel.groupMembers.value?.map { it.name.lowercase().trim() } ?: emptyList()
+        if (existingNames.contains(memberName.lowercase().trim())) {
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Member Already Exists")
+                .setMessage("A member named '$memberName' already exists in this group.")
+                .setPositiveButton("OK", null)
+                .show()
+            return
+        }
+
+        val newMember = GroupMember(
+            groupId = groupId,
+            name = memberName
+        )
+
+        // Debug: Check current state
+        println("DEBUG: Adding member to group with ${currentMemberCount} existing members")
+
+        viewModel.addMemberAndRecalculateExpenses(newMember)
+        Toast.makeText(this, "$memberName added! All expenses recalculated. (${currentMemberCount + 1}/50 members)", Toast.LENGTH_LONG).show()
+
+        // Force refresh after a delay
+        binding.root.postDelayed({
+            updateProgressBar()
+        }, 1000)
     }
 
     private fun handleMemberPaymentStatusChange(memberId: Long, isSettled: Boolean) {
+        // Find the member name for personalized message
+        val memberName = memberAdapter.getMembers().find { it.id == memberId }?.name ?: "Member"
+
         if (isSettled) {
             // Mark all unpaid splits for this member as paid
             viewModel.markMemberAsSettled(memberId)
-            Toast.makeText(this, "Member marked as settled", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "$memberName marked as settled", Toast.LENGTH_SHORT).show()
         } else {
             // Mark all paid splits for this member as unpaid
             viewModel.markMemberAsUnsettled(memberId)
-            Toast.makeText(this, "Member marked as unsettled", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "$memberName marked as unsettled", Toast.LENGTH_SHORT).show()
         }
 
         // Force update the progress bar after a short delay to allow database update
@@ -116,7 +215,21 @@ class GroupDetailActivity : AppCompatActivity() {
 
         viewModel.groupMembers.observe(this) { members ->
             memberAdapter.submitList(members)
-            binding.tvMemberCount.text = "${members.size} members"
+
+            val memberCount = members.size
+            binding.tvMemberCount.text = "$memberCount members"
+
+            // UPDATE: Show member count and disable button at limit
+            if (memberCount >= 50) {
+                binding.btnAddMember.text = "Maximum Members (50/50)"
+                binding.btnAddMember.isEnabled = false
+                binding.btnAddMember.alpha = 0.5f
+            } else {
+                binding.btnAddMember.text = "+ Add Member (${memberCount}/50)"
+                binding.btnAddMember.isEnabled = true
+                binding.btnAddMember.alpha = 1.0f
+            }
+
             updateProgressBar()
         }
 

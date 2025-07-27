@@ -171,6 +171,72 @@ class GroupDetailViewModel(
             groupMemberDao.delete(member)
         }
     }
+
+    fun addMemberAndRecalculateExpenses(newMember: GroupMember) {
+        viewModelScope.launch {
+            try {
+                // 1. Add the new member first
+                val newMemberId = groupMemberDao.insert(newMember)
+
+                // 2. Get all current group expenses (synchronously)
+                val groupExpenses = expenseDao.getGroupExpensesSync(groupId)
+
+                // 3. Get all current members including the new one (synchronously)
+                val allMembers = groupMemberDao.getGroupMembersSync(groupId)
+                val memberCount = allMembers.size
+
+                println("DEBUG: Found ${groupExpenses.size} expenses to recalculate for ${memberCount} members")
+
+                // 4. Recalculate each expense
+                groupExpenses.forEach { expense ->
+                    println("DEBUG: Recalculating expense: ${expense.title} - ₱${expense.amount}")
+                    recalculateExpenseSplits(expense, memberCount, newMemberId)
+                }
+
+                println("DEBUG: Recalculation completed")
+
+            } catch (e: Exception) {
+                println("ERROR: Failed to add member and recalculate: ${e.message}")
+                e.printStackTrace()
+            }
+        }
+    }
+
+    private suspend fun recalculateExpenseSplits(expense: Expense, newMemberCount: Int, newMemberId: Long) {
+        try {
+            // Get existing splits for this expense (synchronously)
+            val existingSplits = expenseSplitDao.getExpenseSplitsSync(expense.id)
+
+            // Calculate new split amount
+            val newSplitAmount = expense.amount / newMemberCount
+
+            println("DEBUG: Expense ${expense.title}: ₱${expense.amount} ÷ ${newMemberCount} = ₱${newSplitAmount} per person")
+
+            // Update existing splits with new amount
+            existingSplits.forEach { split ->
+                val updatedSplit = split.copy(
+                    amount = newSplitAmount
+                    // Keep the same isPaid status
+                )
+                expenseSplitDao.update(updatedSplit)
+                println("DEBUG: Updated split for member ${split.memberId}: ₱${newSplitAmount}")
+            }
+
+            // Add new split for the new member
+            val newSplit = ExpenseSplit(
+                expenseId = expense.id,
+                memberId = newMemberId,
+                amount = newSplitAmount,
+                isPaid = false // New member hasn't paid yet
+            )
+            expenseSplitDao.insert(newSplit)
+            println("DEBUG: Added new split for member ${newMemberId}: ₱${newSplitAmount}")
+
+        } catch (e: Exception) {
+            println("ERROR: Failed to recalculate splits for expense ${expense.title}: ${e.message}")
+            e.printStackTrace()
+        }
+    }
 }
 
 // Personal History ViewModel
