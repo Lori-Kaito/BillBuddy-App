@@ -219,7 +219,7 @@ class GroupDetailActivity : AppCompatActivity() {
             val memberCount = members.size
             binding.tvMemberCount.text = "$memberCount members"
 
-            // UPDATE: Show member count and disable button at limit
+            // Show member count and disable button at limit
             if (memberCount >= 50) {
                 binding.btnAddMember.text = "Maximum Members (50/50)"
                 binding.btnAddMember.isEnabled = false
