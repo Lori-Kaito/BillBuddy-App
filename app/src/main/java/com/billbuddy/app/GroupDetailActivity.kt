@@ -41,6 +41,7 @@ class GroupDetailActivity : AppCompatActivity() {
     private lateinit var memberAdapter: GroupMemberAdapter
     private lateinit var expenseAdapter: GroupExpenseAdapter
     private var groupId: Long = 0
+    private var categories = listOf<Category>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -91,6 +92,15 @@ class GroupDetailActivity : AppCompatActivity() {
         // Add member button click listener
         binding.btnAddMember.setOnClickListener {
             showAddMemberDialog()
+        }
+        // Load categories
+        loadCategories()
+    }
+
+    private fun loadCategories() {
+        viewModel.categories.observe(this) { categoryList ->
+            categories = categoryList ?: emptyList()
+            expenseAdapter.updateCategories(categories)
         }
     }
 
@@ -252,6 +262,10 @@ class GroupDetailActivity : AppCompatActivity() {
                 displayLatestExpenseReceipt(expenses)
             }
             updateProgressBar()
+        }
+        viewModel.categories.observe(this) { categoryList ->
+            categories = categoryList ?: emptyList()
+            expenseAdapter.updateCategories(categories)
         }
     }
 
@@ -495,9 +509,16 @@ class GroupDetailActivity : AppCompatActivity() {
 class GroupExpenseAdapter : RecyclerView.Adapter<GroupExpenseAdapter.ExpenseViewHolder>() {
 
     private var expenses = listOf<Expense>()
+    private var categories = listOf<Category>()
 
     fun submitList(newExpenses: List<Expense>) {
         expenses = newExpenses
+        notifyDataSetChanged()
+    }
+
+    // Method to update categories
+    fun updateCategories(newCategories: List<Category>) {
+        categories = newCategories
         notifyDataSetChanged()
     }
 
@@ -523,6 +544,16 @@ class GroupExpenseAdapter : RecyclerView.Adapter<GroupExpenseAdapter.ExpenseView
 
         fun bind(expense: Expense) {
             binding.tvExpenseTitle.text = expense.title
+
+            // Display category
+            val category = categories.find { it.id == expense.categoryId }
+            if (category != null) {
+                binding.tvExpenseCategory.text = category.name
+                binding.tvExpenseCategory.visibility = View.VISIBLE
+            } else {
+                binding.tvExpenseCategory.text = "Uncategorized"
+                binding.tvExpenseCategory.visibility = View.VISIBLE
+            }
 
             val format = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("en-PH"))
             binding.tvExpenseAmount.text = format.format(expense.amount)

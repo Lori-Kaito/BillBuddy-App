@@ -134,6 +134,7 @@ class GroupDetailViewModel(
     val groupMembers = groupMemberDao.getGroupMembers(groupId)
     val groupExpenses = expenseDao.getGroupExpenses(groupId)
     val memberBalances = expenseSplitDao.getGroupMemberBalances(groupId)
+    val categories = database.categoryDao().getAllCategories()
 
     private val _group = MutableLiveData<ExpenseGroup>()
     val group: LiveData<ExpenseGroup> = _group
