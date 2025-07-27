@@ -276,6 +276,7 @@ class AddGroupExpenseActivity : AppCompatActivity() {
         btnCreateGroup.setOnClickListener {
             val groupName = etGroupName.text.toString().trim()
             val description = etGroupDescription.text.toString().trim()
+            val blankMemberPositions = mutableListOf<Int>()
 
             val members = mutableListOf<String>()
             for (i in 0 until membersContainer.childCount) {
@@ -283,15 +284,47 @@ class AddGroupExpenseActivity : AppCompatActivity() {
                 val name = input.text.toString().trim()
                 if (name.isNotEmpty()) {
                     members.add(name)
+                } else{
+                    blankMemberPositions.add(i + 1)
                 }
             }
 
             // Check for basic requirements
             if (groupName.isEmpty()) {
                 Toast.makeText(this@AddGroupExpenseActivity, "Please enter a group name", Toast.LENGTH_SHORT).show()
+                etGroupName.requestFocus()
                 return@setOnClickListener
             }
 
+            // Check for blank member names
+            if (blankMemberPositions.isNotEmpty()) {
+                val positionText = when (blankMemberPositions.size) {
+                    1 -> "Member ${blankMemberPositions[0]}"
+                    2 -> "Members ${blankMemberPositions[0]} and ${blankMemberPositions[1]}"
+                    else -> {
+                        val lastPosition = blankMemberPositions.last()
+                        val otherPositions = blankMemberPositions.dropLast(1).joinToString(", ")
+                        "Members $otherPositions, and $lastPosition"
+                    }
+                }
+
+                MaterialAlertDialogBuilder(this@AddGroupExpenseActivity)
+                    .setTitle("Missing Member Names")
+                    .setMessage("$positionText ${if (blankMemberPositions.size == 1) "is" else "are"} blank. Please enter ${if (blankMemberPositions.size == 1) "a name" else "names"} for all members.")
+                    .setPositiveButton("OK") { _, _ ->
+                        // Focus on the first blank field
+                        val firstBlankIndex = blankMemberPositions[0] - 1
+                        if (firstBlankIndex < membersContainer.childCount) {
+                            val inputField = membersContainer.getChildAt(firstBlankIndex) as TextInputEditText
+                            inputField.requestFocus()
+                            inputField.error = "Please enter a name"
+                        }
+                    }
+                    .show()
+                return@setOnClickListener
+            }
+
+            // check minimum member count
             if (members.size < 2) {
                 Toast.makeText(this@AddGroupExpenseActivity, "Please enter at least 2 member names", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
