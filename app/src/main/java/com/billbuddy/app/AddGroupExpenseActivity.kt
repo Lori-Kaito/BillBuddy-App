@@ -31,6 +31,7 @@ import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
+import android.widget.LinearLayout
 
 class AddGroupExpenseActivity : AppCompatActivity() {
 
@@ -285,18 +286,86 @@ class AddGroupExpenseActivity : AppCompatActivity() {
                 }
             }
 
-            if (groupName.isNotEmpty() && members.size >= 2) {
-                viewModel.createGroupWithMembers(
-                    groupName = groupName,
-                    description = description.ifBlank { null },
-                    memberNames = members
-                )
-                alertDialog.dismiss()
-            } else {
-                Toast.makeText(this, "Please enter group name and at least 2 members", Toast.LENGTH_LONG).show()
+            // Check for basic requirements
+            if (groupName.isEmpty()) {
+                Toast.makeText(this@AddGroupExpenseActivity, "Please enter a group name", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
             }
+
+            if (members.size < 2) {
+                Toast.makeText(this@AddGroupExpenseActivity, "Please enter at least 2 member names", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            // Check for duplicate member names
+            val duplicateValidation = validateMemberNames(members)
+            if (!duplicateValidation.isValid) {
+                showDuplicateNameError(duplicateValidation.duplicateName, duplicateValidation.positions, membersContainer)
+                return@setOnClickListener
+            }
+
+            // If all validations pass, create the group
+            viewModel.createGroupWithMembers(
+                groupName = groupName,
+                description = description.ifBlank { null },
+                memberNames = members
+            )
+            alertDialog.dismiss()
         }
     }
+
+    private fun validateMemberNames(memberNames: List<String>): ValidationResult {
+        val nameCount = mutableMapOf<String, MutableList<Int>>()
+
+        memberNames.forEachIndexed { index, name ->
+            val normalizedName = name.lowercase().trim()
+            if (normalizedName.isNotEmpty()) {
+                if (!nameCount.containsKey(normalizedName)) {
+                    nameCount[normalizedName] = mutableListOf()
+                }
+                nameCount[normalizedName]!!.add(index + 1)
+            }
+        }
+
+        nameCount.forEach { (name, positions) ->
+            if (positions.size > 1) {
+                return ValidationResult(false, name, positions)
+            }
+        }
+
+        return ValidationResult(true)
+    }
+
+    private fun showDuplicateNameError(duplicateName: String, positions: List<Int>, membersContainer: android.widget.LinearLayout) {
+        val positionText = positions.joinToString(", ")
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Duplicate Member Names")
+            .setMessage("The name '$duplicateName' appears multiple times (Members: $positionText).\n\nPlease ensure all member names are unique.")
+            .setPositiveButton("OK") { _, _ ->
+                highlightDuplicateField(positions.first() - 1, membersContainer)
+            }
+            .show()
+    }
+
+    private fun highlightDuplicateField(position: Int, membersContainer: android.widget.LinearLayout) {
+        try {
+            if (position < membersContainer.childCount) {
+                val inputField = membersContainer.getChildAt(position) as TextInputEditText
+                inputField.requestFocus()
+                inputField.selectAll()
+                inputField.error = "Duplicate name - please use a unique name"
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    data class ValidationResult(
+        val isValid: Boolean,
+        val duplicateName: String = "",
+        val positions: List<Int> = emptyList()
+    )
 
     private fun setupCategoryDropdown(categories: List<Category>) {
         val categoryNames = categories.map { it.name }
