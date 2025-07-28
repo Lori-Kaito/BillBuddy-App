@@ -59,29 +59,54 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
 
     val categories = categoryDao.getAllCategories()
 
-    private val groupsObserver = Observer<List<ExpenseGroup>> { groupList ->
-        viewModelScope.launch {
-            val updatedGroups = groupList.map { group ->
-                val memberCount = groupDao.getMemberCount(group.id)
-                val totalExpenses = groupDao.getTotalExpenses(group.id)
+    // Observe both groups and all members to trigger updates
+    private val groupsObserver = Observer<List<ExpenseGroup>> {
+        recalculateGroupDetails()
+    }
 
-                GroupWithDetails(
-                    id = group.id,
-                    name = group.name,
-                    description = group.description,
-                    createdAt = group.createdAt,
-                    updatedAt = group.updatedAt,
-                    memberCount = memberCount,
-                    totalExpenses = totalExpenses
-                )
-            }
-            _groupsWithCalculations.postValue(updatedGroups)
-        }
+    private val membersObserver = Observer<List<GroupMember>> {
+        recalculateGroupDetails()
+    }
+
+    private val expensesObserver = Observer<List<Expense>> {
+        recalculateGroupDetails()
     }
 
     init {
-        // Observe groups and calculate details
+        // Observe groups, members, and expenses for instant updates
         groupDao.getGroupsWithDetails().observeForever(groupsObserver)
+
+        // This is the key fix - observe ALL group members, not just for specific groups
+        database.groupMemberDao().getAllGroupMembers().observeForever(membersObserver)
+
+        // Also observe expenses to update totals instantly
+        database.expenseDao().getAllGroupExpenses().observeForever(expensesObserver)
+    }
+
+    private fun recalculateGroupDetails() {
+        viewModelScope.launch {
+            try {
+                val allGroups = groupDao.getAllGroupsSync()
+                val updatedGroups = allGroups.map { group ->
+                    val memberCount = groupDao.getMemberCount(group.id)
+                    val totalExpenses = groupDao.getTotalExpenses(group.id)
+
+                    GroupWithDetails(
+                        id = group.id,
+                        name = group.name,
+                        description = group.description,
+                        createdAt = group.createdAt,
+                        updatedAt = group.updatedAt,
+                        memberCount = memberCount,
+                        totalExpenses = totalExpenses
+                    )
+                }
+                _groupsWithCalculations.postValue(updatedGroups)
+            } catch (e: Exception) {
+                println("ERROR: Failed to recalculate group details: ${e.message}")
+                e.printStackTrace()
+            }
+        }
     }
 
     fun updateGroup(group: ExpenseGroup) {
@@ -116,6 +141,8 @@ class GroupsViewModel(application: Application) : AndroidViewModel(application) 
     override fun onCleared() {
         super.onCleared()
         groupDao.getGroupsWithDetails().removeObserver(groupsObserver)
+        database.groupMemberDao().getAllGroupMembers().removeObserver(membersObserver)
+        database.expenseDao().getAllGroupExpenses().removeObserver(expensesObserver)
     }
 }
 

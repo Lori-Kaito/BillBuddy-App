@@ -19,6 +19,9 @@ interface ExpenseDao {
     @Query("SELECT * FROM expenses WHERE id = :id")
     suspend fun getExpenseById(id: Long): Expense?
 
+    @Query("SELECT * FROM expenses WHERE isPersonal = 0 ORDER BY date DESC")
+    fun getAllGroupExpenses(): LiveData<List<Expense>>
+
     @Query("SELECT * FROM expenses WHERE isPersonal = 1 ORDER BY date DESC")
     fun getAllPersonalExpenses(): LiveData<List<Expense>>
 
@@ -188,6 +191,9 @@ interface GroupDao {
     suspend fun delete(group: ExpenseGroup)
 
     @Query("SELECT * FROM groups ORDER BY createdAt DESC")
+    suspend fun getAllGroupsSync(): List<ExpenseGroup>
+
+    @Query("SELECT * FROM groups ORDER BY createdAt DESC")
     fun getAllGroups(): LiveData<List<ExpenseGroup>>
 
     @Query("SELECT * FROM groups WHERE id = :id")
@@ -225,6 +231,9 @@ interface GroupMemberDao {
 
     @Delete
     suspend fun delete(member: GroupMember)
+
+    @Query("SELECT * FROM group_members ORDER BY groupId, name")
+    fun getAllGroupMembers(): LiveData<List<GroupMember>>
 
     @Query("SELECT * FROM group_members WHERE groupId = :groupId ORDER BY name")
     fun getGroupMembers(groupId: Long): LiveData<List<GroupMember>>
