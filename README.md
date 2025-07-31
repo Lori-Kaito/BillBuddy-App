@@ -4,6 +4,7 @@ Features
 📊 Dashboard Overview
 
 Personal Spending Tracker: Monitor your individual expenses with real-time totals
+
 Group Spending Management: Track shared expenses and group activities
 Clean, organized dashboard displaying spending summaries at a glance
 
