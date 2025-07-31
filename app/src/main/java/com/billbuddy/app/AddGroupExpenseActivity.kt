@@ -719,11 +719,18 @@ class AddGroupExpenseActivity : AppCompatActivity() {
 
         val lines = text.lines().map { it.trim() }.filter { it.isNotEmpty() }
 
-        // Look for "TOTAL" keyword and find amount nearby
-        val totalAmount = findAmountNearTotal(lines)
+        // Look for "TOTAL" keyword specifically
+        val totalAmount = findAmountNearExactTotal(lines)
         if (totalAmount != null) {
-            println("DEBUG: Found amount near TOTAL: $totalAmount")
+            println("DEBUG: Found amount near TOTAL keyword: $totalAmount")
             return totalAmount
+        }
+
+        // Look for amount patterns in the bottom third of receipt
+        val bottomAmount = findAmountInBottomSection(lines)
+        if (bottomAmount != null) {
+            println("DEBUG: Found amount in bottom section: $bottomAmount")
+            return bottomAmount
         }
 
         // Look for other total indicators
@@ -733,81 +740,96 @@ class AddGroupExpenseActivity : AppCompatActivity() {
             return otherTotalAmount
         }
 
-        // Find the largest reasonable amount with currency symbol
-        val largestCurrencyAmount = findLargestCurrencyAmount(text)
-        if (largestCurrencyAmount != null) {
-            println("DEBUG: Found largest currency amount: $largestCurrencyAmount")
-            return largestCurrencyAmount
-        }
-
         println("DEBUG: No total amount found using any strategy")
         return null
     }
 
-    private fun findAmountNearTotal(lines: List<String>): Double? {
-        val totalKeywords = listOf("total", "amount due", "grand total", "net total")
+    private fun findAmountNearExactTotal(lines: List<String>): Double? {
+        // Look specifically for "TOTAL" keyword
+        for (i in lines.indices) {
+            val line = lines[i].trim()
+            val lowerLine = line.lowercase(Locale.getDefault())
 
-        for (keyword in totalKeywords) {
-            for (i in lines.indices) {
-                val line = lines[i].lowercase(Locale.getDefault())
+            // Must contain "total" as a standalone word or at start of line
+            if (lowerLine.contains("total") && !lowerLine.contains("subtotal")) {
+                println("DEBUG: Found TOTAL keyword in line $i: '$line'")
 
-                if (line.contains(keyword)) {
-                    println("DEBUG: Found '$keyword' in line $i: '${lines[i]}'")
-
-                    // Check current line first
-                    val amountInSameLine = extractAmountFromLine(lines[i])
-                    if (amountInSameLine != null) {
-                        println("DEBUG: Found amount in same line: $amountInSameLine")
-                        return amountInSameLine
+                // Check if amount is on the same line after "total"
+                val totalMatch = Regex("""total\s*[:\s]*([P₱]?\s*[0-9,]+\.?[0-9]*)""", RegexOption.IGNORE_CASE)
+                val match = totalMatch.find(line)
+                if (match != null) {
+                    val amount = extractAmountFromText(match.groupValues[1])
+                    if (amount != null) {
+                        println("DEBUG: Found amount on same line as TOTAL: $amount")
+                        return amount
                     }
+                }
 
-                    // Check next 3 lines
-                    for (offset in 1..3) {
-                        if (i + offset < lines.size) {
-                            val nextLine = lines[i + offset]
-                            val amount = extractAmountFromLine(nextLine)
-                            if (amount != null) {
-                                println("DEBUG: Found amount in line ${i + offset}: $amount")
-                                return amount
-                            }
+                // Check next 2 lines for amounts
+                for (offset in 1..2) {
+                    if (i + offset < lines.size) {
+                        val nextLine = lines[i + offset]
+                        val amount = extractAmountFromLine(nextLine)
+                        if (amount != null && amount >= 10.0) {
+                            println("DEBUG: Found total amount in line ${i + offset}: $amount")
+                            return amount
                         }
                     }
+                }
 
-                    // Check previous 2 lines (sometimes amount comes before total)
-                    for (offset in 1..2) {
-                        if (i - offset >= 0) {
-                            val prevLine = lines[i - offset]
-                            val amount = extractAmountFromLine(prevLine)
-                            if (amount != null) {
-                                println("DEBUG: Found amount in previous line ${i - offset}: $amount")
-                                return amount
-                            }
-                        }
+                // Check if amount is on previous line
+                if (i - 1 >= 0) {
+                    val prevLine = lines[i - 1]
+                    val amount = extractAmountFromLine(prevLine)
+                    if (amount != null && amount >= 10.0) {
+                        println("DEBUG: Found total amount in previous line: $amount")
+                        return amount
                     }
                 }
             }
         }
-
         return null
     }
 
+    private fun findAmountInBottomSection(lines: List<String>): Double? {
+        // Look in the bottom 30% of the receipt for the largest amount
+        val startIndex = (lines.size * 0.7).toInt()
+        val bottomLines = lines.subList(startIndex, lines.size)
+
+        val amounts = mutableListOf<Double>()
+
+        for (line in bottomLines) {
+            val amount = extractAmountFromLine(line)
+            if (amount != null && amount >= 10.0) {
+                amounts.add(amount)
+                println("DEBUG: Found amount in bottom section: $amount from '$line'")
+            }
+        }
+
+        // Return the largest amount found in bottom section
+        return amounts.maxOrNull()
+    }
+
     private fun findAmountNearOtherTotalKeywords(lines: List<String>): Double? {
-        val otherKeywords = listOf("subtotal", "sub total", "amount", "balance", "pay", "due")
+        val otherKeywords = listOf("amount due", "grand total", "net total", "balance due")
 
         for (keyword in otherKeywords) {
             for (i in lines.indices) {
                 val line = lines[i].lowercase(Locale.getDefault())
 
                 if (line.contains(keyword)) {
+                    println("DEBUG: Found '$keyword' in line $i: '${lines[i]}'")
+
+                    // Check same line and next line
                     val amountInSameLine = extractAmountFromLine(lines[i])
-                    if (amountInSameLine != null) {
+                    if (amountInSameLine != null && amountInSameLine >= 10.0) {
                         return amountInSameLine
                     }
 
                     if (i + 1 < lines.size) {
                         val nextLine = lines[i + 1]
                         val amount = extractAmountFromLine(nextLine)
-                        if (amount != null) {
+                        if (amount != null && amount >= 10.0) {
                             return amount
                         }
                     }
@@ -818,57 +840,26 @@ class AddGroupExpenseActivity : AppCompatActivity() {
         return null
     }
 
-    private fun findLargestCurrencyAmount(text: String): Double? {
-        val currencyPatterns = listOf(
-            // Philippine peso patterns
-            Regex("""₱\s*([0-9,]+\.?[0-9]*)"""),
-            Regex("""PHP\s*([0-9,]+\.?[0-9]*)""", RegexOption.IGNORE_CASE),
-            Regex("""P\s+([0-9,]+\.[0-9]{2})"""), // P 150.00 format
-            Regex("""P([0-9,]+\.[0-9]{2})"""),    // P150.00 format
-            // Dollar patterns
-            Regex("""\$\s*([0-9,]+\.?[0-9]*)""")
-        )
-
-        val amounts = mutableListOf<Double>()
-
-        for (pattern in currencyPatterns) {
-            val matches = pattern.findAll(text)
-            for (match in matches) {
-                val amountStr = match.groupValues[1].replace(",", "")
-                val amount = amountStr.toDoubleOrNull()
-                if (amount != null && amount >= 1.0 && amount <= 100000.0) {
-                    amounts.add(amount)
-                    println("DEBUG: Found currency amount: $amount from '${match.value}'")
-                }
-            }
-        }
-
-        return amounts.maxOrNull()
-    }
-
     private fun extractAmountFromLine(line: String): Double? {
         if (line.isBlank()) return null
 
         println("DEBUG: Extracting amount from line: '$line'")
 
-        // Comprehensive amount patterns
         val amountPatterns = listOf(
-            // Currency symbol patterns
-            Regex("""₱\s*([0-9,]+\.?[0-9]*)"""),
-            Regex("""PHP\s*([0-9,]+\.?[0-9]*)""", RegexOption.IGNORE_CASE),
-            Regex("""P\s+([0-9,]+\.[0-9]{2})"""),
-            Regex("""P([0-9,]+\.[0-9]{2})"""),
-            Regex("""\$\s*([0-9,]+\.?[0-9]*)"""),
+            // Philippine peso with currency symbols (highest priority)
+            Regex("""P\s*([0-9,]+\.[0-9]{2})"""),     // P24.30, P 24.30
+            Regex("""₱\s*([0-9,]+\.[0-9]{2})"""),     // ₱24.30, ₱ 24.30
+            Regex("""PHP\s*([0-9,]+\.[0-9]{2})""", RegexOption.IGNORE_CASE), // PHP24.30
 
-            // Decimal number patterns (likely to be amounts)
-            Regex("""([0-9,]+\.[0-9]{2})"""),  // 150.00, 1,500.50
-            Regex("""([0-9,]+\.[0-9]{1})"""),  // 150.5
+            // Decimal amounts that look like money (2 decimal places)
+            Regex("""([0-9,]+\.[0-9]{2})"""),         // 24.30, 1,234.56
 
-            // Whole number patterns with thousands separators
-            Regex("""([0-9]{1,3}(?:,[0-9]{3})+)"""), // 1,500 or 12,345
+            // Peso symbols with whole numbers
+            Regex("""P\s*([0-9,]+)"""),               // P24, P 150
+            Regex("""₱\s*([0-9,]+)"""),               // ₱24, ₱ 150
 
-            // Simple number patterns
-            Regex("""([0-9]{2,6})""") // 50 to 999999 (2-6 digits only)
+            // Whole numbers with thousands separators (lower priority)
+            Regex("""([0-9]{1,3}(?:,[0-9]{3})+)""")   // 1,500 or 12,345
         )
 
         for ((index, pattern) in amountPatterns.withIndex()) {
@@ -885,6 +876,13 @@ class AddGroupExpenseActivity : AppCompatActivity() {
         }
 
         return null
+    }
+
+    private fun extractAmountFromText(text: String): Double? {
+        // Extract amount from text that might have currency symbols
+        val cleanText = text.replace(Regex("""[P₱$]"""), "").trim()
+        val amount = cleanText.replace(",", "").toDoubleOrNull()
+        return if (amount != null && amount >= 1.0 && amount <= 100000.0) amount else null
     }
 
     private fun showDatePicker() {
