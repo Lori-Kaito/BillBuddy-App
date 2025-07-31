@@ -225,7 +225,7 @@ class AddPersonalExpenseActivity : AppCompatActivity() {
         println("=======================================")
 
         // Show scanned text card so user can see what was detected
-        binding.cardScannedText.visibility = View.VISIBLE
+        // binding.cardScannedText.visibility = View.VISIBLE
         binding.tvScannedText.text = text
 
         // Extract title first

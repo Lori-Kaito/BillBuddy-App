@@ -627,7 +627,7 @@ class AddGroupExpenseActivity : AppCompatActivity() {
 
         // Show scanned text if the card exists in your layout
         try {
-            binding.cardScannedText.visibility = View.VISIBLE
+            // binding.cardScannedText.visibility = View.VISIBLE
             binding.tvScannedText.text = text
         } catch (e: Exception) {
 

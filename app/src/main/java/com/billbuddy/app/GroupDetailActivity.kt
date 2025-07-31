@@ -451,14 +451,33 @@ class GroupDetailActivity : AppCompatActivity() {
             .setView(input)
             .setPositiveButton("Update") { _, _ ->
                 val newName = input.text.toString().trim()
-                if (newName.isNotEmpty() && newName != member.name) {
-                    val updatedMember = member.copy(name = newName)
-                    viewModel.updateMember(updatedMember)
-                    Toast.makeText(this, "Member name updated to '$newName'", Toast.LENGTH_SHORT).show()
-                } else if (newName.isEmpty()) {
-                    Toast.makeText(this, "Member name cannot be empty", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this, "No changes made", Toast.LENGTH_SHORT).show()
+                when {
+                    newName.isEmpty() -> {
+                        Toast.makeText(this, "Member name cannot be empty", Toast.LENGTH_SHORT).show()
+                    }
+                    newName.length > 30 -> {
+                        Toast.makeText(this, "Member name is too long (max 30 characters)", Toast.LENGTH_SHORT).show()
+                    }
+                    newName == member.name -> {
+                        Toast.makeText(this, "No changes made", Toast.LENGTH_SHORT).show()
+                    }
+                    isDuplicateMemberName(newName, member.id) -> {
+                        // Show duplicate name error
+                        MaterialAlertDialogBuilder(this)
+                            .setTitle("Duplicate Member Name")
+                            .setMessage("A member named '$newName' already exists in this group.\n\nPlease choose a different name.")
+                            .setPositiveButton("OK") { _, _ ->
+                                // Re-open the edit dialog to let user try again
+                                showEditMemberNameDialog(member)
+                            }
+                            .show()
+                    }
+                    else -> {
+                        // Name is valid, update the member
+                        val updatedMember = member.copy(name = newName)
+                        viewModel.updateMember(updatedMember)
+                        Toast.makeText(this, "Member name updated to '$newName'", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
             .setNegativeButton("Cancel", null)
@@ -466,6 +485,20 @@ class GroupDetailActivity : AppCompatActivity() {
 
         // Focus the input and show keyboard
         input.requestFocus()
+    }
+
+    // Check if member name already exists in the group
+    private fun isDuplicateMemberName(newName: String, excludeMemberId: Long): Boolean {
+        val currentMembers = viewModel.groupMembers.value ?: emptyList()
+
+        // Normalize the new name for comparison (lowercase, trimmed)
+        val normalizedNewName = newName.lowercase().trim()
+
+        // Check if any other member (excluding the one being edited) has the same name
+        return currentMembers.any { member ->
+            member.id != excludeMemberId &&
+                    member.name.lowercase().trim() == normalizedNewName
+        }
     }
 
     private fun showRemoveMemberConfirmation(member: GroupMember) {
