@@ -4,32 +4,46 @@ Features
 📊 Dashboard Overview
 
 Personal Spending Tracker: Monitor your individual expenses with real-time totals
+
 Group Spending Management: Track shared expenses and group activities
 Clean, organized dashboard displaying spending summaries at a glance
 
 💳 Personal Expense Management
 
 Quick Expense Entry: Add personal expenses with just a few taps
+
 Receipt Capture: Take photos of receipts for easy record-keeping
+
 OCR Text Scanning: Automatically extract expense details from receipt images
+
 Categorization: Organize expenses by categories (Healthcare, Entertainment, etc.)
+
 Expense History: View detailed history of all personal transactions
+
 Personal Summary: Generate comprehensive spending reports
 
 👥 Group Expense Tracking
 
 Create Groups: Set up expense groups for shared activities
+
 Add Group Members: Invite friends and family to expense groups
+
 Split Bills: Automatically calculate who owes what
+
 Payment Tracking: Monitor payment status and settlement progress
+
 Member Management: Track individual contributions and balances
 
 🎯 Smart Features
 
 Receipt Photo Integration: Capture and store receipt images
+
 Automatic Text Extraction: Smart OCR technology reads receipt details
+
 Category Management: Customize and manage expense categories
+
 Date Tracking: Automatic date logging with manual override options
+
 Notes Support: Add optional notes to any expense entry
 
 Screenshots
@@ -44,17 +58,24 @@ Detailed expense history and reporting
 Technology Stack
 
 Platform: Android Mobile Application
+
 UI Framework: Modern Android UI with Material Design principles
+
 Camera Integration: Receipt capture functionality
+
 OCR Technology: Text extraction from receipt images
+
 Database: Local storage for expense data
+
 File Management: Image storage and retrieval system
 
 Getting Started
 Prerequisites
 
 Android device running Android 6.0 (API level 23) or higher
+
 Camera permissions for receipt capture
+
 Storage permissions for saving receipts and data
 
 Billbuddy - Installation Instructions
