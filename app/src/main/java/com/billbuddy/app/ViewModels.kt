@@ -390,8 +390,6 @@ class SpendingSummaryViewModel(application: Application) : AndroidViewModel(appl
         loadSummary(Period.WEEK, currentYear)
     }
 
-
-
     @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
     private fun loadAvailableYears() {
         viewModelScope.launch {
@@ -420,24 +418,12 @@ class SpendingSummaryViewModel(application: Application) : AndroidViewModel(appl
 
     private fun loadSummary(period: Period, year: String) {
         val calendar = Calendar.getInstance()
-
-        // Set calendar to the selected year
         calendar.set(Calendar.YEAR, year.toInt())
 
-        val endDate = when (period) {
+        val (startDate, endDate) = when (period) {
             Period.WEEK -> {
-                // For weekly, use current week in selected year
-                val currentYear = Calendar.getInstance().get(Calendar.YEAR)
-
-                if (year.toInt() == currentYear) {
-                    // Current year - use actual current week
-                    Calendar.getInstance().time
-                } else {
-                    // Past year - use last week of year
-                    calendar.set(Calendar.WEEK_OF_YEAR, calendar.getActualMaximum(Calendar.WEEK_OF_YEAR))
-                    calendar.set(Calendar.DAY_OF_WEEK, Calendar.SUNDAY)
-                    calendar.time
-                }
+                // Get current Sunday-Saturday week
+                getCurrentWeekSundayToSaturday()
             }
             Period.MONTH -> {
                 // For monthly, use current month in selected year
@@ -445,39 +431,42 @@ class SpendingSummaryViewModel(application: Application) : AndroidViewModel(appl
 
                 if (year.toInt() == currentYear) {
                     // Current year - use actual current month
-                    Calendar.getInstance().time
+                    val endCal = Calendar.getInstance()
+                    val startCal = Calendar.getInstance()
+                    startCal.add(Calendar.MONTH, -1)
+                    Pair(startCal.time, endCal.time)
                 } else {
                     // Past year - use December
                     calendar.set(Calendar.MONTH, Calendar.DECEMBER)
                     calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMaximum(Calendar.DAY_OF_MONTH))
-                    calendar.time
+                    val endDate = calendar.time
+
+                    calendar.add(Calendar.MONTH, -1)
+                    val startDate = calendar.time
+                    Pair(startDate, endDate)
                 }
             }
             Period.YEAR -> {
-                // For yearly, use end of selected year
-                calendar.set(Calendar.MONTH, Calendar.DECEMBER)
-                calendar.set(Calendar.DAY_OF_MONTH, 31)
-                calendar.time
-            }
-        }
+                // For yearly, use entire selected year
+                val startCal = Calendar.getInstance()
+                startCal.set(Calendar.YEAR, year.toInt())
+                startCal.set(Calendar.MONTH, Calendar.JANUARY)
+                startCal.set(Calendar.DAY_OF_MONTH, 1)
+                startCal.set(Calendar.HOUR_OF_DAY, 0)
+                startCal.set(Calendar.MINUTE, 0)
+                startCal.set(Calendar.SECOND, 0)
+                startCal.set(Calendar.MILLISECOND, 0)
 
-        val startDate = when (period) {
-            Period.WEEK -> {
-                val cal = Calendar.getInstance()
-                cal.time = endDate
-                cal.add(Calendar.DAY_OF_YEAR, -7)
-                cal.time
-            }
-            Period.MONTH -> {
-                val cal = Calendar.getInstance()
-                cal.time = endDate
-                cal.add(Calendar.MONTH, -1)
-                cal.time
-            }
-            Period.YEAR -> {
-                calendar.set(Calendar.MONTH, Calendar.JANUARY)
-                calendar.set(Calendar.DAY_OF_MONTH, 1)
-                calendar.time
+                val endCal = Calendar.getInstance()
+                endCal.set(Calendar.YEAR, year.toInt())
+                endCal.set(Calendar.MONTH, Calendar.DECEMBER)
+                endCal.set(Calendar.DAY_OF_MONTH, 31)
+                endCal.set(Calendar.HOUR_OF_DAY, 23)
+                endCal.set(Calendar.MINUTE, 59)
+                endCal.set(Calendar.SECOND, 59)
+                endCal.set(Calendar.MILLISECOND, 999)
+
+                Pair(startCal.time, endCal.time)
             }
         }
 
@@ -497,6 +486,34 @@ class SpendingSummaryViewModel(application: Application) : AndroidViewModel(appl
             .observeForever { expenseList ->
                 _personalExpenses.value = expenseList
             }
+    }
+
+    // Get current week from Sunday to Saturday
+    private fun getCurrentWeekSundayToSaturday(): Pair<Date, Date> {
+        val calendar = Calendar.getInstance()
+
+        // Ensure Sunday is the first day of the week
+        calendar.firstDayOfWeek = Calendar.SUNDAY
+
+        // Get the current week's Sunday (start of week)
+        calendar.set(Calendar.DAY_OF_WEEK, Calendar.SUNDAY)
+        calendar.set(Calendar.HOUR_OF_DAY, 0)
+        calendar.set(Calendar.MINUTE, 0)
+        calendar.set(Calendar.SECOND, 0)
+        calendar.set(Calendar.MILLISECOND, 0)
+        val startOfWeek = calendar.time
+
+        // Get the current week's Saturday (end of week)
+        calendar.set(Calendar.DAY_OF_WEEK, Calendar.SATURDAY)
+        calendar.set(Calendar.HOUR_OF_DAY, 23)
+        calendar.set(Calendar.MINUTE, 59)
+        calendar.set(Calendar.SECOND, 59)
+        calendar.set(Calendar.MILLISECOND, 999)
+        val endOfWeek = calendar.time
+
+        println("DEBUG: Week range - Start: $startOfWeek, End: $endOfWeek")
+
+        return Pair(startOfWeek, endOfWeek)
     }
 
     private fun getCurrentYear(): String {

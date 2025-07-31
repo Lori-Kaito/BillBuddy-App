@@ -1,28 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="@android:color/black"
-    android:padding="16dp">
-
-    <Button
-        android:id="@+id/btnCloseReceipt"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="end"
-        android:text="Close"
-        android:textColor="@android:color/white"
-        android:background="@android:color/transparent"
-        android:textAllCaps="false" />
+    android:background="@android:color/black">
 
     <ImageView
         android:id="@+id/ivFullReceipt"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:layout_marginTop="8dp"
+        android:layout_height="match_parent"
         android:scaleType="fitCenter"
         android:adjustViewBounds="true" />
 
-</LinearLayout>
+    <!-- Close X button positioned at top-right of receipt -->
+    <ImageButton
+        android:id="@+id/btnCloseReceipt"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_gravity="top|end"
+        android:layout_margin="8dp"
+        android:background="@drawable/circle_background"
+        android:src="@drawable/ic_close"
+        android:contentDescription="Close"
+        android:scaleType="centerInside"
+        android:padding="8dp" />
+
+</FrameLayout>

@@ -242,6 +242,11 @@ class PersonalHistoryActivity : AppCompatActivity() {
                 return
             }
 
+            // Use the dialog_receipt_viewer.xml layout
+            val dialogView = layoutInflater.inflate(R.layout.dialog_receipt_viewer, null)
+            val imageView = dialogView.findViewById<ImageView>(R.id.ivFullReceipt)
+            val closeButton = dialogView.findViewById<View>(R.id.btnCloseReceipt)
+
             val bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 val source = ImageDecoder.createSource(file)
                 ImageDecoder.decodeBitmap(source)
@@ -251,24 +256,19 @@ class PersonalHistoryActivity : AppCompatActivity() {
             }
 
             if (bitmap != null) {
-                val imageView = ImageView(this)
                 imageView.setImageBitmap(bitmap)
-                imageView.scaleType = ImageView.ScaleType.FIT_CENTER
-                imageView.adjustViewBounds = true
 
-                val displayMetrics = resources.displayMetrics
-                val maxWidth = (displayMetrics.widthPixels * 0.9).toInt()
-                val maxHeight = (displayMetrics.heightPixels * 0.8).toInt()
-                imageView.maxWidth = maxWidth
-                imageView.maxHeight = maxHeight
+                // Create dialog WITHOUT title
+                val dialog = MaterialAlertDialogBuilder(this)
+                    .setView(dialogView)  // REMOVED .setTitle() to eliminate title
+                    .create()
 
-                MaterialAlertDialogBuilder(this)
-                    .setTitle("Receipt Image")
-                    .setView(imageView)
-                    .setPositiveButton("Close") { dialog, _ ->
-                        dialog.dismiss()
-                    }
-                    .show()
+                // Set up close button
+                closeButton.setOnClickListener {
+                    dialog.dismiss()
+                }
+
+                dialog.show()
             } else {
                 Toast.makeText(this, "Failed to load receipt image", Toast.LENGTH_SHORT).show()
             }

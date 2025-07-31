@@ -345,19 +345,10 @@ class GroupDetailActivity : AppCompatActivity() {
 
             println("DEBUG: Creating dialog...")
 
-            showSimpleReceiptDialog(imagePath)
-
-        } catch (e: Exception) {
-            println("ERROR: Exception in showFullSizeReceipt: ${e.message}")
-            e.printStackTrace()
-            Toast.makeText(this, "Error loading receipt: ${e.message}", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    // Simple receipt dialog
-    private fun showSimpleReceiptDialog(imagePath: String) {
-        try {
-            val file = File(imagePath)
+            // Use the dialog_receipt_viewer.xml layout
+            val dialogView = layoutInflater.inflate(R.layout.dialog_receipt_viewer, null)
+            val imageView = dialogView.findViewById<ImageView>(R.id.ivFullReceipt)
+            val closeButton = dialogView.findViewById<View>(R.id.btnCloseReceipt)
 
             // Load the bitmap
             val bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -369,26 +360,27 @@ class GroupDetailActivity : AppCompatActivity() {
             }
 
             if (bitmap != null) {
-                // Create ImageView for dialog
-                val imageView = ImageView(this)
                 imageView.setImageBitmap(bitmap)
-                imageView.scaleType = ImageView.ScaleType.FIT_CENTER
-                imageView.adjustViewBounds = true
 
-                // Create and show dialog
-                MaterialAlertDialogBuilder(this)
-                    .setTitle("Receipt")
-                    .setView(imageView)
-                    .setPositiveButton("Close", null)
-                    .show()
+                // Create dialog WITHOUT title
+                val dialog = MaterialAlertDialogBuilder(this)
+                    .setView(dialogView)  // REMOVED .setTitle() to eliminate title
+                    .create()
 
-                println("DEBUG: Simple dialog shown successfully")
+                // Set up close button
+                closeButton.setOnClickListener {
+                    dialog.dismiss()
+                }
+
+                dialog.show()
+
+                println("DEBUG: Dialog shown successfully")
             } else {
                 Toast.makeText(this, "Failed to load receipt image", Toast.LENGTH_SHORT).show()
             }
 
         } catch (e: Exception) {
-            println("ERROR: Exception in showSimpleReceiptDialog: ${e.message}")
+            println("ERROR: Exception in showFullSizeReceipt: ${e.message}")
             e.printStackTrace()
             Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
         }

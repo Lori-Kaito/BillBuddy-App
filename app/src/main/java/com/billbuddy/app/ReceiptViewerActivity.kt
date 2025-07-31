@@ -185,9 +185,9 @@ class ReceiptViewerActivity : AppCompatActivity() {
             }
 
             // Create ImageView for full-screen display
-            val imageView = ImageView(this)
-            imageView.scaleType = ImageView.ScaleType.FIT_CENTER
-            imageView.adjustViewBounds = true
+            val dialogView = layoutInflater.inflate(R.layout.dialog_receipt_viewer, null)
+            val imageView = dialogView.findViewById<ImageView>(R.id.ivFullReceipt)
+            val closeButton = dialogView.findViewById<View>(R.id.btnCloseReceipt)
 
             // Load image with basic method
             try {
@@ -205,11 +205,16 @@ class ReceiptViewerActivity : AppCompatActivity() {
             }
 
             // Show in dialog
-            MaterialAlertDialogBuilder(this)
-                .setTitle("Receipt Image")
-                .setView(imageView)
-                .setPositiveButton("Close", null)
-                .show()
+            val dialog = MaterialAlertDialogBuilder(this)
+                .setView(dialogView)
+                .create()
+
+            // Set up close button
+            closeButton.setOnClickListener {
+                dialog.dismiss()
+            }
+
+            dialog.show()
 
         } catch (e: Exception) {
             e.printStackTrace()

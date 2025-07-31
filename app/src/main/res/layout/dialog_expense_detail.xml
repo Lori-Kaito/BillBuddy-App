@@ -195,6 +195,19 @@
 
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- X Close button positioned at top-right -->
+            <ImageButton
+                android:id="@+id/btnCloseReceipt"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_gravity="top|end"
+                android:layout_margin="8dp"
+                android:background="@drawable/circle_background_white"
+                android:src="@drawable/ic_close"
+                android:contentDescription="Close"
+                android:scaleType="centerInside"
+                android:padding="6dp" />
+
         </LinearLayout>
 
     </LinearLayout>
