@@ -1,7 +1,7 @@
-BillBuddy 💰
+# BillBuddy 💰
 A comprehensive expense tracking mobile application designed to help you manage both personal and group expenses with ease. Built with a clean, intuitive interface that makes expense management simple and efficient.
-Features
-📊 Dashboard Overview
+# Features
+## 📊 Dashboard Overview
 
 Personal Spending Tracker: Monitor your individual expenses with real-time totals
 
